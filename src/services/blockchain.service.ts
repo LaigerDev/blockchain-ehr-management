@@ -1,5 +1,4 @@
-import { Injectable } from '@angular/core';
-import { resolve } from 'dns';
+import { Injectable, signal, WritableSignal } from '@angular/core';
 import Web3 from 'web3';
 
 const Contract = require('../../build/contracts/Contract.json');
@@ -10,7 +9,7 @@ declare let window: any;
   providedIn: 'root',
 })
 export class BlockchainService {
-  account: any = [];
+  account: WritableSignal<string> = signal('');
   netId: any;
   web3: any;
 
@@ -21,19 +20,20 @@ export class BlockchainService {
 
   admin: any;
 
-  balance: any;
+  balance: WritableSignal<number> = signal(0);
 
 
   constructor() {
-    this.getWeb3Provider().then(() => {
-      this.web3.eth.getAccounts((err: any, accs: any) => {
-        this.account = accs[0];
-        this.web3.eth.getBalance(this.account).then((r: any) => {
-          this.balance = r;
+    this.getWeb3Provider().then((web3: Web3) => {
+      web3.eth.getAccounts().then((acts: any) => {
+        this.account.set(acts[0])
+        console.log(acts[0]);
+        web3.eth.getBalance(acts[0]).then((r: any) => {
+          this.balance.set(Math.floor(Number(web3.utils.fromWei(r, "ether")) * 1000) / 1000);
         });
-      });
+      }).catch(err => console.log(err))
 
-      this.web3.eth.net.getId().then((r: number) => {
+      this.web3.eth.net.getId().then((r: any) => {
         this.netId = r;
         this.abi = Contract.abi;
         this.netWorkData = Contract.networks[this.netId];
@@ -44,7 +44,8 @@ export class BlockchainService {
       });
       window.ethereum.on('accountsChanged', (acc: any) => {
         console.log(acc);
-        window.location.reload();
+        this.account.set(acc[0])
+        // window.location.reload();
       });
     });
 
@@ -53,7 +54,7 @@ export class BlockchainService {
   checkIsAdmin(): Promise<boolean> {
     return new Promise((resolve, reject) => {
       this.getContract().then(c => {
-        this.getCurrentAcount().then(a => {
+        this.getCurrentAccount().then(a => {
           console.log(a);
           c.methods.isAdmin().call({ from: a }).then((r: any) => {
             console.log(r);
@@ -76,12 +77,10 @@ export class BlockchainService {
     if (window.ethereum) {
       window.web3 = new Web3(window.ethereum);
       window.ethereum.enable();
-      // console.log(window.web3);
 
       this.web3 = window.web3;
-      this.account = await this.web3.eth.getAccounts().then((acc: string[]) => {
-        // console.log(acc);
-        return acc[0];
+      await this.web3.eth.getAccounts().then((acc: string[]) => {
+        this.account.set(acc[0])
       });
       return window.web3;
     } else if (window.web3) {
@@ -92,11 +91,10 @@ export class BlockchainService {
     }
   }
 
-  getCurrentAcount(): Promise<string> {
+  getCurrentAccount(): Promise<string> {
     return new Promise((resolve, reject) => {
       if (this.web3) {
         this.web3.eth.getAccounts().then((acc: string[]) => {
-          // console.log(acc[0]);
           resolve(acc[0]);
         });
       } else {
@@ -114,7 +112,7 @@ export class BlockchainService {
   }
 
   getAccount() {
-    return this.account;
+    return this.account();
   }
 
   async getContract(): Promise<any> {
