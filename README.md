@@ -15,10 +15,6 @@ Demo : [Youtube](https://youtu.be/d_-pWoGgdVs)
 <br>
 Setup : [Youtube](https://youtube.com/playlist?list=PL54V-i7zW55d1VKxEkp9DCPt5k_zE6m3X)
 
-contact : 
-[Mail](mailto:tshamil90@gmail.com?Subject=ehr-blockchain&Body=Hi,)
-`tshamil90@gmail.com`
-
 🆁🅴🆀🆄🅸🆁🅴🅼🅴🅽🆃🆂
 
 1.Install nodeJs
